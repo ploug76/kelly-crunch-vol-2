@@ -569,7 +569,7 @@ function drawTongue(KD){const tg=G.tg;if(!tg||!tg.cell)return;const v=V.get(tg.c
  if(tg.phase==='tug'){const w=Math.abs(Math.sin(tg.t*34));const cx=colX(tg.col);const topY=GE.top-16;const py=tg.ty+w*GE.rowH*.35;
   X.strokeStyle='#2f7d33';X.lineWidth=2.6;X.beginPath();X.moveTo(cx,Math.max(topY,tg.ty-GE.rowH*.6));X.lineTo(cx+Math.sin(RT*40)*1.5,py);X.stroke();
   drawCritter(tg.cell,cx,py,R,{sx:1-w*.18,sy:1+w*.35,ph:v.ph||0,open:0,shiver:1})}
- else if(tg.phase==='back'){const g=kGeo();const r=R*lerp(Math.min(.62,g.hh*.32/R),1,tg.len);v.x=KD?KD.hx:colX(tg.col);v.y=(KD?KD.mY:g.restMY)-r*.35;drawCritter(tg.cell,v.x,v.y,r,v)}
+ else if(tg.phase==='back'){const g=kGeo();const r=R*lerp(Math.min(.45,g.hh*.3/R),1,tg.len);v.x=KD?KD.hx:colX(tg.col);v.y=(KD?KD.mY:g.restMY)+r*lerp(.55,-.35,tg.len);drawCritter(tg.cell,v.x,v.y,r,v)}
  else drawCritter(tg.cell,v.x,v.y,R,v)}
 function drawBoss(){const B=G.boss,bb=GE.bossBox;if(!B||!bb)return;const d=B.dead;if(d>2.2)return;
  const bob=Math.sin(RT*2)*bb.h*.03,lunge=Math.sin((B.lunge||0)*Math.PI)*bb.h*.12;const warn=B.warn&&B.hp>0?(1.4-Math.max(0,B.atkT))/1.4:0;
@@ -609,7 +609,7 @@ function drawWorld(){const sh=G.shake>.3?G.shake:0;X.save();X.translate(rand(-1,
  drawBoss();
  const KD=drawKelly();drawTongue(KD);
  for(const f of G.flights){if(!f.fromK)continue;const v=V.get(f.cell.id);if(!v)continue;const R=radius(f.cell);drawCritter(f.cell,v.x,v.y,R,{sx:.85,sy:1.25,ph:v.ph,open:0})}
- if(G.hold){const v=V.get(G.hold.id)||newVis(G.hold,G.kelly.x,GE.kY);const g=kGeo();const R=Math.min(radius(G.hold)*.62,g.hh*.32);const hx=KD?KD.hx:G.kelly.x,my=KD?KD.mY:g.restMY;v.x=hx;v.y=my-R*.35+Math.sin(RT*5)*1;
+ if(G.hold){const v=V.get(G.hold.id)||newVis(G.hold,G.kelly.x,GE.kY);const g=kGeo();const R=Math.min(radius(G.hold)*.45,g.hh*.3);const hx=KD?KD.hx:G.kelly.x,my=KD?KD.mY:g.restMY;v.x=hx;v.y=my+R*.55+Math.sin(RT*5)*1;
   if(G.kelly.muffT>0){v.shiver=1}drawCritter(G.hold,v.x,v.y,R,v);
   if(G.kelly.muffT>0){X.font=FONT(13,800);X.textAlign='center';X.fillStyle='rgba(255,255,255,'+Math.min(1,G.kelly.muffT*2)+')';X.fillText('mmff!',hx+g.hw*.6,my-g.hh*.55-(.7-G.kelly.muffT)*20)}}
  if(G.drools)for(const d of G.drools){let x=d.x,y=d.y,R=GE.base*.4;const v=V.get(d.id);if(v&&v.eaten==null){x=v.x;y=v.y;}const c=G.B.flat().find(q=>q&&q.id===d.id);if(c)R=radius(c);drawDrips(x,y,R,d.t,d.seed,Math.min(1,(1.8-d.t)*1.4))}
