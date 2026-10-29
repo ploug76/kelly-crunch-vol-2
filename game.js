@@ -379,7 +379,8 @@ function hintSearch(B0,maxD,maxNodes){const fail=new Map();let nodes=0,done=null
  return{step}}
 function flash(s,t){G.toast={s,t:t||2.2}}
 function updateGame(dt){const K=G.kelly;G.t+=G.over?0:dt;
- const tx=colX(K.col);const a=900*(tx-K.x)-2*Math.sqrt(900)*K.vx*.95;K.vx+=a*dt;K.x+=K.vx*dt;if(Math.abs(tx-K.x)<.3&&Math.abs(K.vx)<5){K.x=tx;K.vx=0}
+ const tx=colX(K.col);for(let rem=dt;rem>1e-6;){const h=Math.min(rem,1/240);rem-=h;const a=900*(tx-K.x)-2*Math.sqrt(900)*K.vx*.95;K.vx+=a*h;K.x+=K.vx*h}/* substepped: one big dt step made the spring blow up on slow frames */
+ if(!isFinite(K.x)||!isFinite(K.vx)||Math.abs(K.x-tx)>Math.max(W,H)){K.x=tx;K.vx=0}if(Math.abs(tx-K.x)<.3&&Math.abs(K.vx)<5){K.x=tx;K.vx=0}
  K.hop=Math.max(0,K.hop-dt*6);K.squash=Math.max(0,K.squash-dt*5);K.mouth=Math.max(G.tg||G.hold?.4:0,K.mouth-dt*4);if(K.stun>0)K.stun-=dt;if(K.emoT>0){K.emoT-=dt;if(K.emoT<=0)K.emo=''}
  K.blinkT-=dt;if(K.blinkT<0)K.blinkT=rand(2,5);
  for(let c=0;c<G.frozen.length;c++)if(G.frozen[c]>0)G.frozen[c]-=dt;
@@ -458,11 +459,11 @@ function drawBG(wi,dim){const k=WORLDS[wi].bg;const im=ART[k];X.setTransform(DPR
  if(dim){X.fillStyle=`rgba(8,10,24,${dim})`;X.fillRect(0,0,W,H)}}
 function updateVis(dt){const Hh=G.hold,I=G.mode!=='puzzle'?pushInterval():99,left=I-G.pushT;
  G.B.forEach((col,c)=>col.forEach((x,r)=>{if(!x)return;let v=V.get(x.id);if(!v)v=newVis(x,colX(c),rowY(r));v.cell=x;if(v.grabbed)return;const tx=colX(c),ty=rowY(r);
-  const k=560,d=2*Math.sqrt(k)*.62;v.vx+=(k*(tx-v.x)-d*v.vx)*dt;v.vy+=(k*(ty-v.y)-d*v.vy)*dt;v.x+=v.vx*dt;v.y+=v.vy*dt;
-  v.svx+=(320*(1-v.sx)-15*v.svx)*dt;v.svy+=(320*(1-v.sy)-15*v.svy)*dt;v.sx+=v.svx*dt;v.sy+=v.svy*dt;
+  const k=560,d=2*Math.sqrt(k)*.62,n=Math.max(1,Math.ceil(dt*240)),h=dt/n;for(let i=0;i<n;i++){v.vx+=(k*(tx-v.x)-d*v.vx)*h;v.vy+=(k*(ty-v.y)-d*v.vy)*h;v.x+=v.vx*h;v.y+=v.vy*h;
+  v.svx+=(320*(1-v.sx)-15*v.svx)*h;v.svy+=(320*(1-v.sy)-15*v.svy)*h;v.sx+=v.svx*h;v.sy+=v.svy*h}if(!isFinite(v.x+v.y+v.sx+v.sy)){v.x=tx;v.y=ty;v.vx=v.vy=0;v.sx=v.sy=1;v.svx=v.svy=0}
   let want=0;if(Hh&&c===G.kelly.col&&r===col.length-1&&KC.compat(x,Hh))want=.75;v.open+=(want-v.open)*Math.min(1,dt*12);
   v.blink-=dt;if(v.blink<0)v.blink=rand(2,6);v.shiver=G.mode!=='puzzle'&&left<1.5?clamp(1-left/1.5,0,1):0}));
- if(G.hold){const v=V.get(G.hold.id);if(v){v.svx+=(320*(1-v.sx)-15*v.svx)*dt;v.svy+=(320*(1-v.sy)-15*v.svy)*dt;v.sx+=v.svx*dt;v.sy+=v.svy*dt}}
+ if(G.hold){const v=V.get(G.hold.id);if(v){const n=Math.max(1,Math.ceil(dt*240)),h=dt/n;for(let i=0;i<n;i++){v.svx+=(320*(1-v.sx)-15*v.svx)*h;v.svy+=(320*(1-v.sy)-15*v.svy)*h;v.sx+=v.svx*h;v.sy+=v.svy*h}}}
  for(const v of V.values()){if(v.eaten==null)continue;v.et+=dt;const e=V.get(v.eaten);if(e){const p=clamp(v.et/.14,0,1);v.x=lerp(v.x,e.x,p);v.y=lerp(v.y,e.y,p);v.sx=v.sy=Math.max(.05,1-p)}if(v.et>.16)v.dead=1}
  for(const [id,v] of V)if(v.dead)V.delete(id);
  cleanT-=dt;if(cleanT<0){cleanT=1;const live=new Set();G.B.forEach(col=>col.forEach(x=>x&&live.add(x.id)));if(G.hold)live.add(G.hold.id);if(G.tg&&G.tg.cell)live.add(G.tg.cell.id);G.flights.forEach(f=>live.add(f.cell.id));for(const [id,v] of V)if(!live.has(id)&&v.eaten==null)V.delete(id)}
