@@ -105,3 +105,4 @@ body.land .bigstars{font-size:48px}
 .bar{width:200px;height:10px;border-radius:5px;background:rgba(255,255,255,.2);overflow:hidden}.bar i{display:block;height:100%;width:40%;background:#ffe14d;animation:ld 1s linear infinite}
 @keyframes ld{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
 @media (max-height:500px){.b.big{min-height:50px;font-size:20px}h2{font-size:30px}.goal,.howd,.stxt{font-size:17px}}
+body.land .scr.story .foot,body.land .scr.story .dots{width:100%}

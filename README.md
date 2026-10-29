@@ -1,6 +1,6 @@
 # Kelly Crunch Vol. 2: The Great Feast Quest
 
-Kelly the chameleon is back. The Gobble King crashed the Rainbow Feast and carried off every pie, so Kelly sets out across five painted worlds to win it back, one critter chain at a time.
+Kelly is back, now as a little giraffe with a stubby neck that stretches up to grab critters! The Gobble King crashed the Rainbow Feast and carried off every pie, so Kelly sets out across five painted worlds to win it back, one critter chain at a time.
 
 Play: https://ploug76.github.io/kelly-crunch-vol-2/
 

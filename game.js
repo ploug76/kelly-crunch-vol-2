@@ -206,13 +206,38 @@ const MUS=(()=>{
    const ph=Math.floor(bar/2)%4,sub=(bar%2)*16+s;const mel=tr.mel[ph];for(const n of mel)if(n.s===sub){const m=tr.note(n.deg+7);(inst[tr.lead]||inst.square)(m+(tr.lead==='brass'?-12:0),sd*(n.len+.6))}}};
  return M})();
 
+/* ===== Giraffe SFX: squeals, muffled squeals, boing, splat, Nooooo! (all synthesized) ===== */
+AU.filt=function(type,f,q){const c=this.ctx;if(!c)return null;const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q||.7;fl.connect(this.sfx);return fl};
+AU.voice=function(f0,f1,d,v,opt){const c=this.ctx;if(!c)return;opt=opt||{};const t=c.currentTime+(opt.dl||0);
+ const o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),lfo=c.createOscillator(),lg=c.createGain();
+ o.type=opt.type||'sawtooth';o2.type='square';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+d);
+ o2.frequency.setValueAtTime(f0*1.005,t);o2.frequency.exponentialRampToValueAtTime(Math.max(30,f1*1.005),t+d);
+ lfo.frequency.value=opt.vib||7;lg.gain.value=f0*(opt.vd||.03);lfo.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);
+ const dest=opt.dest||AU.filt('bandpass',opt.formant||1600,opt.fq||1.6);if(!dest)return;
+ const g2=c.createGain();g2.gain.value=.35;o.connect(g);o2.connect(g2);g2.connect(g);g.connect(dest);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.03);if(opt.hold)g.gain.setValueAtTime(v,t+d*opt.hold);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ if(opt.formEnd&&dest.frequency)dest.frequency.exponentialRampToValueAtTime(opt.formEnd,t+d);
+ [o,o2,lfo].forEach(x=>{x.start(t);x.stop(t+d+.05)})};
+let _sq=0;
+Object.assign(SFX,{
+ squeal(){const P=[[1250,1700],[1500,2000],[1100,1550],[1700,2250]][(_sq++)%4];const j=1+(Math.random()-.5)*.12;
+  AU.voice(P[0]*j,P[1]*j,.22,.11,{formant:2600,fq:1.2,vib:18,vd:.04});AU.voice(P[1]*j,P[0]*j*1.1,.2,.09,{dl:.2,formant:2800,fq:1.2,vib:22,vd:.05})},
+ squealMuffled(){const b=1200+Math.random()*400;const lp=AU.filt('lowpass',420,4);if(!lp)return;
+  AU.voice(b,b*1.25,.28,.16,{dest:lp,vib:16,vd:.05});AU.voice(b*1.2,b*.9,.32,.13,{dest:lp,dl:.3,vib:20,vd:.05});AU.noise(.12,.05,300,'lowpass',.05)},
+ boing(){AU.tone(150,.32,'sine',.22,520);AU.tone(240,.26,'triangle',.09,760,.03);AU.tone(500,.12,'sine',.06,1100,.18)},
+ strain(){AU.tone(95,.14,'sawtooth',.06,80);AU.noise(.1,.05,700,'bandpass')},
+ splat(){AU.noise(.2,.22,1100,'lowpass',0,180);AU.tone(260,.14,'sine',.14,70);AU.tone(700,.16,'sine',.06,1500,.08);AU.noise(.08,.07,2600,'bandpass',.14)},
+ slurpDrool(){AU.tone(900,.16,'sine',.1,300);AU.tone(420,.12,'triangle',.06,900,.07)},
+ nooo(){const j=1+(Math.random()-.5)*.1;AU.voice(820*j,240*j,1.45,.13,{formant:900,formEnd:420,fq:2.2,vib:6,vd:.03,hold:.35})}
+});
+
 /* ===== worlds, stages, bosses, story ===== */
 const COLORS=[{n:'Berry',b:'#ff4f6e',l:'#ff9aac',d:'#a8173a'},{n:'Sky',b:'#3aa8ff',l:'#9ad3ff',d:'#13599e'},{n:'Lime',b:'#56d04f',l:'#a8f29c',d:'#1f7a2a'},{n:'Sunny',b:'#ffcc2e',l:'#fff09a',d:'#b07a00'},{n:'Grape',b:'#a866ff',l:'#d6b4ff',d:'#5a23a8'}];
 const SIZES=['Nibbler','Muncher','Chomper'];
 const COMBO_WORDS=['','Crunchy!','Double Crunch!','Triple Crunch!','Super Crunch!','Mega Munch!','Ultra Munch!','KELLY CRUNCH!!'];
 const WORLDS=[
  {n:'Sunny Garden',bg:'bg1',mus:'w1',tint:'#8fd6ff',mote:'petal',ui:'#2fae4a',boss:{n:'Bramblejaw',art:'boss1',hp:44,atk:'thorns',every:11,line:'Grrr! These snacks are MINE!',beat:'Bramblejaw is stuffed! He curls up for a happy nap in the flower beds.'}},
- {n:'Misty Swamp',bg:'bg2',mus:'w2',tint:'#4d8f86',mote:'firefly',ui:'#2f8a7a',boss:{n:'Queen Bogsnap',art:'boss2',hp:58,atk:'slime',every:10,line:'Bloop! My bog, my rules, little lizard!',beat:'Queen Bogsnap burps a giant bubble and laughs. She lets Kelly pass!'}},
+ {n:'Misty Swamp',bg:'bg2',mus:'w2',tint:'#4d8f86',mote:'firefly',ui:'#2f8a7a',boss:{n:'Queen Bogsnap',art:'boss2',hp:58,atk:'slime',every:10,line:'Bloop! My bog, my rules, little giraffe!',beat:'Queen Bogsnap burps a giant bubble and laughs. She lets Kelly pass!'}},
  {n:'Sunset Canyon',bg:'bg3',mus:'w3',tint:'#ff9a6b',mote:'dust',ui:'#c86a43',boss:{n:'Rockjaw the Rumbler',art:'boss3',hp:72,atk:'rumble',every:12,line:'RUMBLE RUMBLE! Nobody crosses my canyon!',beat:'Rockjaw rumbles one last time... then gives Kelly a rocky thumbs-up.'}},
  {n:'Crystal Caverns',bg:'bg4',mus:'w4',tint:'#5a3f8f',mote:'sparkle',ui:'#6a4fd0',boss:{n:'Glimmergulp',art:'boss4',hp:86,atk:'freeze',every:10,line:'Shiny snacks freeze in my caverns!',beat:'Glimmergulp sparkles with joy and lights the way to the sky castle!'}},
  {n:'Starry Sky Castle',bg:'bg5',mus:'w5',tint:'#2b3a7a',mote:'star',ui:'#7a4fd0',boss:{n:'The Gobble King',art:'boss5',hp:110,atk:'royal',every:9,line:'The Rainbow Feast belongs to ME! Bring me more snacks!',beat:'The Gobble King is finally full. "Maybe... sharing IS tastier," he says.'}}];
@@ -224,17 +249,17 @@ WORLDS.forEach((w,wi)=>{const f=(goal,iv,cols,lvl,par)=>({type:'feast',w:wi,goal
  const g=k=>{const goal=22+wi*6+k*6,iv=Math.max(5.6,10.5-wi*.9-k*.5),cols=Math.min(5,3+Math.floor((wi+k)/2)),lvl=1+wi*2+k;return f(goal,iv,cols,lvl,Math.round(goal*2.6))};
  STAGES.push(g(0),{type:'puzzle',w:wi,pi:PZ[wi][0]},g(1),{type:'puzzle',w:wi,pi:PZ[wi][1]},g(2),{type:'boss',w:wi,iv:Math.max(7.5,12-wi*.8),cols:Math.min(5,3+wi),lvl:2+wi*2,par:70+wi*12})});
 STAGES.forEach((s,i)=>{s.i=i;s.label=(s.w+1)+'-'+(i%6+1)});
-const TIPS={0:'Swipe left or right to move Kelly. Tap to grab the bottom critter, tap again to spit it!',
+const TIPS={0:'Swipe left or right to move Kelly. Tap to stretch your neck and grab the bottom critter, tap again to spit it!',
  2:'Feed a smaller critter to the next size up: round Nibbler ➜ triangle Muncher ➜ horned Chomper.',
  4:'A critter that has eaten is FULL (puffy cheeks). Feed it again and it POPS!',
  5:'BOSS! Every critter you pop blasts the boss. Pop lots at once for big damage!'};
 const STORY=[
  {img:'story1',t:'Every year, Kelly hosts the Rainbow Feast in the Sunny Garden. Pies, cakes and all her critter friends!'},
  {img:'story2',t:'But this year the greedy GOBBLE KING swooped in on a storm cloud... and his critter gang gobbled EVERYTHING!'},
- {img:'story3',t:'Now critters are stampeding across five wild worlds. Only Kelly, the fastest tongue in the swamp, can feed the food chain and win back the Feast!'}];
+ {img:'story3',t:'Now critters are stampeding across five wild worlds. Only Kelly, the stretchiest little giraffe in the garden, can feed the food chain and win back the Feast!'}];
 const ENDING={img:'story4',t:'The Gobble King learned that a feast is better when you share it. Kelly saved the Rainbow Feast, and EVERYONE got cake!'};
 const HOW=[
- {t:'Meet Kelly!',d:'Swipe left or right (and hold) to move Kelly. Tap anywhere to shoot her tongue and grab the bottom critter. Tap again to spit it into the column above her.',art:'kelly'},
+ {t:'Meet Kelly!',d:'Swipe left or right (and hold) to move Kelly. Tap anywhere and her stubby neck s-t-r-e-t-c-h-e-s up to grab the bottom critter in her mouth. Tap again and she stretches up to spit it into the column above her.',art:'kelly'},
  {t:'Feed the Food Chain',d:'Round Nibblers feed triangle Munchers. Munchers feed horned Chompers. Spit the wrong size and it just sticks to the bottom.',art:'sizes'},
  {t:'Full Critters Pop',d:'A critter that has eaten gets puffy cheeks: it is FULL. Feed it again, or feed it to a bigger critter, and it POPS! Pops spread to touching critters of the same size and color.',art:'full'},
  {t:'Special Critters',d:'BOMB eats anything; feed it twice to blast everything around it. SPIKY: never grab it! Pop a neighbor to clear it. GEM ROCK: pop a neighbor for a gem shower.',art:'special'},
@@ -288,6 +313,7 @@ function doAct(col){const K=G.kelly;G.hint=null;
  if(G.mode!=='puzzle'&&G.res&&g==='ok'&&G.res.seeds.includes(col_[r].id)){G.queue.push(col);return}
  const ty=g==='empty'?GE.top-8:rowY(r);const dist=Math.max(30,(GE.kY-46)-ty);
  G.tg={col,phase:'out',t:0,dur:.055+dist/5200,ty,res:g,cell:null,len:0};K.mouth=1;SFX.thwip();
+ if(g==='ok'){const tug=!G.lastTug&&Math.random()<.2;G.tg.tug=tug;G.lastTug=tug}
  if(g==='ok'){const cell=KC.grab(G.B,col);G.tg.cell=cell;cell.src=col;if(G.mode==='puzzle')G.undo.push({B:KC.clone(G.B.map((c,i)=>i===col?c.concat([cell]):c)),moves:G.moves,score:G.score,popped:G.popped});const v=V.get(cell.id);if(v)v.grabbed=1}}
 function tongueHit(){const tg=G.tg,K=G.kelly;
  if(tg.res==='ok'){SFX.slurp();const v=V.get(tg.cell.id);if(v){v.sx=1.35;v.sy=.7}}
@@ -300,8 +326,11 @@ function spitTo(col){const K=G.kelly,item=G.hold;G.hold=null;K.mouth=1;K.squash=
  const bottom=G.B[col][G.B[col].length-1];const free=item.src===col&&!KC.compat(bottom,item);
  if(G.mode==='puzzle'){if(free)G.undo.pop();else G.moves++}
  const v=V.get(item.id)||newVis(item,K.x,GE.kY-52);v.x=K.x;v.y=GE.kY-GE.kH*.5;v.vx=0;v.vy=0;v.grabbed=0;
- G.flights.push({cell:item,col,t:0,y0:GE.kY-GE.kH*.5,x0:K.x})}
-function arrive(f){const res=KC.spit(G.B,f.col,f.cell);const v=V.get(f.cell.id);
+ const fl={cell:item,col,t:0,y0:GE.kY-GE.kH*.5,x0:K.x,fromK:1};if(Math.random()<1/3)fl.drool=1;
+ if(G.fighters&&G.fighters.has(item.id)){G.fighters.delete(item.id);fl.nooo=1;SFX.nooo();addLabel('Nooooo!',K.x+GE.colW*.6,GE.kY-GE.kH*1.2,'#fff4a8',22,true)}
+ G.flights.push(fl)}
+function arrive(f){const v0=V.get(f.cell.id);if(f.fromK){G.kelly.neckBack=1;G.kelly.neckFromY=v0?v0.y:f.ty;G.kelly.neckFromX=colX(f.col)}if(f.drool){G.drools.push({id:f.cell.id,x:v0?v0.x:colX(f.col),y:v0?v0.y:f.ty,t:0,seed:Math.random()*9});SFX.splat();spark(v0?v0.x:colX(f.col),v0?v0.y:f.ty,'#bfeaff',12);if(Math.random()<.5)addLabel(['Splurt!','Sploosh!','Ew, drool!'][Math.floor(Math.random()*3)],colX(f.col)+GE.colW*.7,(v0?v0.y:f.ty)+GE.rowH*.6,'#bfeaff',16,true)}
+ const res=KC.spit(G.B,f.col,f.cell);const v=V.get(f.cell.id);
  if(res.kind==='stack'){SFX.stack();if(v){v.sx=1.25;v.sy=.75;v.vy=-200}for(let i=0;i<G.B[f.col].length-1;i++){const w=V.get(G.B[f.col][i].id);if(w)w.vy-=60}}
  else{const ev=res.ev;const e=V.get(res.eater);SFX.gulp();if(v){v.eaten=res.eater;v.et=0}if(e){e.sx=1.35;e.sy=.72;e.open=1}
   if(ev.chain){const a=V.get(ev.chain);G.foodChain=(G.foodChain||0)+1;if(a){a.open=1;a.sx=1.4;a.sy=.7}const eat=V.get(res.eater);if(eat){eat.eaten=ev.chain;eat.et=0}}}
@@ -378,7 +407,8 @@ function hintSearch(B0,maxD,maxNodes){const fail=new Map();let nodes=0,done=null
   done.nodes=nodes;return done}
  return{step}}
 function flash(s,t){G.toast={s,t:t||2.2}}
-function updateGame(dt){const K=G.kelly;G.t+=G.over?0:dt;
+function updateGame(dt){const K=G.kelly;const tugging=!!(G.tg&&G.tg.phase==='tug');G.t+=G.over||tugging?0:dt;if(!G.fighters)G.fighters=new Set();if(!G.drools)G.drools=[];
+ K.neckBack=Math.max(0,(K.neckBack||0)-dt*5.5);if(K.muffT>0)K.muffT-=dt;for(let i=G.drools.length-1;i>=0;i--){G.drools[i].t+=dt;if(G.drools[i].t>1.8)G.drools.splice(i,1)}
  const tx=colX(K.col);const a=900*(tx-K.x)-2*Math.sqrt(900)*K.vx*.95;K.vx+=a*dt;K.x+=K.vx*dt;if(Math.abs(tx-K.x)<.3&&Math.abs(K.vx)<5){K.x=tx;K.vx=0}
  K.hop=Math.max(0,K.hop-dt*6);K.squash=Math.max(0,K.squash-dt*5);K.mouth=Math.max(G.tg||G.hold?.4:0,K.mouth-dt*4);if(K.stun>0)K.stun-=dt;if(K.emoT>0){K.emoT-=dt;if(K.emoT<=0)K.emo=''}
  K.blinkT-=dt;if(K.blinkT<0)K.blinkT=rand(2,5);
@@ -388,19 +418,20 @@ function updateGame(dt){const K=G.kelly;G.t+=G.over?0:dt;
  if(G.hint){G.hint.life-=dt;if(G.hint.life<=0)G.hint=null}
  if(G.think){const T=G.think;if(KC.key(G.B)!==T.k||G.moves!==T.m||G.hold){G.think=null;if(G.toast&&G.toast.t>50)G.toast=null}else{T.t+=dt;let r=T.s.step(9);if(!r&&T.t>6)r={moves:null,capped:true};if(r){G.think=null;G.toast=null;showHint(r)}}}
  G.tipT+=dt;
- const tg=G.tg;if(tg){tg.t+=dt;if(tg.phase==='out'){const p=Math.min(1,tg.t/tg.dur);tg.len=ease.out(p);if(p>=1){tongueHit();tg.phase='back';tg.t=0;tg.dur=tg.res==='ok'?.10:tg.res==='empty'?.07:.12}}
-  else{const p=Math.min(1,tg.t/tg.dur);tg.len=1-ease.inq(p);if(p>=1){if(tg.res==='ok'){G.hold=tg.cell;K.squash=1;const v=V.get(tg.cell.id);if(v){v.sx=1.3;v.sy=.75}}G.tg=null}}}
+ const tg=G.tg;if(tg){tg.t+=dt;if(tg.phase==='out'){const p=Math.min(1,tg.t/tg.dur);tg.len=ease.out(p);if(p>=1){if(tg.tug){tg.phase='tug';tg.t=0;tg.dur=.5;tg.sq=0;SFX.squeal();SFX.strain();addLabel('Eeee!',colX(tg.col)+GE.colW*.55,tg.ty-10,'#fff4a8',20,true)}else{tongueHit();tg.phase='back';tg.t=0;tg.dur=tg.res==='ok'?.10:tg.res==='empty'?.07:.12}}}
+  else if(tg.phase==='tug'){tg.len=1;if(tg.t>.24&&!tg.sq){tg.sq=1;SFX.strain();addLabel('Eeeee!',colX(tg.col)-GE.colW*.5,tg.ty-26,'#fff4a8',18,true)}if(tg.t>=tg.dur){SFX.boing();G.fighters.add(tg.cell.id);tongueHit();tg.phase='back';tg.t=0;tg.dur=.10;tg.fight=1}}
+  else{const p=Math.min(1,tg.t/tg.dur);tg.len=1-ease.inq(p);if(p>=1){if(tg.res==='ok'){G.hold=tg.cell;K.squash=1;const v=V.get(tg.cell.id);if(v){v.sx=1.3;v.sy=.75}if(tg.fight){SFX.squealMuffled();K.muffT=.7}}G.tg=null}}}
  for(let i=G.flights.length-1;i>=0;i--){const f=G.flights[i];f.t+=dt;const ty=rowY(G.B[f.col].length)-GE.rowH*.15;const dur=Math.max(.06,(f.y0-ty)/2600);f.ty=ty;f.dur=dur;
   if(f.t>=dur){if(G.res&&G.res.step!=='pop'){f.t=dur;continue}G.flights.splice(i,1);arrive(f)}}
  if(G.res){G.res.t-=dt;if(G.res.t<=0)stepRes()}
  if(G.queue.length&&canAct()){G.queue.shift();doAct(G.kelly.col)}
  if(G.mode==='puzzle'&&!busy()&&!G.hold&&!G.over){if(KC.count(G.B)===0)win();else if(G.moves>=G.limit)lose('Out of moves!')}
- if(G.mode!=='puzzle'){const I=pushInterval();const cells=KC.count(G.B);G.pushT+=dt*(cells<G.NC*2?2:1);const left=I-G.pushT;
+ if(G.mode!=='puzzle'){const I=pushInterval();const cells=KC.count(G.B);G.pushT+=tugging?0:dt*(cells<G.NC*2?2:1);const left=I-G.pushT;
   if(left<1.6){G.warnT-=dt;if(G.warnT<=0){G.warnT=.55;if(G.danger>.6)SFX.warn()}}
   if(G.pushT>=I&&!G.res)pushRow();
   if(G.gemsN>=G.need)levelUp()}
  const B=G.boss;if(B){if(B.talkT>0)B.talkT-=dt;B.hurt=Math.max(0,B.hurt-dt);B.lunge=Math.max(0,(B.lunge||0)-dt*2);B.shown=lerp(B.shown,B.hp,Math.min(1,dt*6));
-  if(B.hp>0){B.atkT-=dt;if(B.atkT<=1.4&&!B.warn){B.warn=1;SFX.charge()}if(B.atkT<=0&&!G.res&&!G.tg){B.warn=0;B.atkT=B.every*(B.phase>1?.75:1);bossAttack()}}
+  if(B.hp>0){if(!tugging)B.atkT-=dt;if(B.atkT<=1.4&&!B.warn){B.warn=1;SFX.charge()}if(B.atkT<=0&&!G.res&&!G.tg){B.warn=0;B.atkT=B.every*(B.phase>1?.75:1);bossAttack()}}
   else{B.dead+=dt}}
  const mx=G.B.reduce((m,c)=>Math.max(m,c.length),0);G.danger=clamp((mx-(G.MAXR-3))/3,0,1);if(G.mode==='puzzle')G.danger=0;MUS.speed=1+G.danger*.12;
  if(G.danger>=.99&&K.emo!=='ouch'&&K.emo!=='cheer')K.emo='worried';else if(K.emo==='worried'&&G.danger<.99)K.emo='';
@@ -478,19 +509,68 @@ function drawCritter(cell,x,y,R,v,alpha){X.save();X.translate(x,y);const full=ce
   X.fillStyle='#fff';X.strokeStyle='#3a1630';X.lineWidth=2;X.font=FONT(Math.max(11,R*.55));X.textAlign='center';X.textBaseline='middle';X.strokeText('FULL',0,-h*.42);X.fillText('FULL',0,-h*.42)}
  if(v.open>.05&&cell.k==='c'){X.strokeStyle=`rgba(140,255,150,${v.open})`;X.lineWidth=3;X.beginPath();X.arc(0,0,R*1.2,0,6.283);X.stroke()}
  X.restore()}
-function kellyPose(){const K=G?G.kelly:{mouth:0,emo:''};if(K.emo==='cheer'||K.emo==='happy')return 'kelly_cheer';if(K.emo==='ouch'||K.emo==='worried')return 'kelly_worry';if(G&&(G.tg||K.mouth>.5))return 'kelly_open';if(G&&G.hold)return 'kelly_full';return 'kelly_idle'}
-function drawKelly(x,y,h){const K=G.kelly;const hop=Math.sin(K.hop*Math.PI)*h*.12;const sq=K.squash;const breathe=Math.sin(RT*3)*.02;
- X.save();X.fillStyle='rgba(0,0,0,.28)';X.beginPath();X.ellipse(x,y-2,h*.36,h*.07,0,0,6.283);X.fill();X.restore();
- const sx=1+sq*.12+breathe,sy=1-sq*.1-breathe;const pose=kellyPose();
- if(K.stun>0){X.save();X.translate(x+Math.sin(RT*50)*3,0);x=0}
- drawArt(pose,x,y-hop,h,{sx,sy,ay:.97});
- if(K.stun>0){X.restore();for(let i=0;i<3;i++){const a=RT*6+i*2.1;X.fillStyle='#ffe14d';starPath(G.kelly.x+Math.cos(a)*h*.3,y-h*1.02+Math.sin(a)*5,6,2.5,5);X.fill()}}}
-function mouthY(){return GE.kY-GE.kH*.40}
-function drawTongue(){const tg=G.tg;if(!tg)return;const K=G.kelly;const mx=K.x,my=mouthY();const tx=colX(tg.col),ty=lerp(my,tg.ty+(tg.res==='ok'?radius(tg.cell)*.2:0),tg.len);
- const w=lerp(12,7,tg.len);const cx=(mx+tx)/2+Math.sin(RT*40)*1.5*tg.len,cy=(my+ty)/2;
- X.lineCap='round';X.strokeStyle='#b8336a';X.lineWidth=w+3;X.beginPath();X.moveTo(mx,my);X.quadraticCurveTo(cx,cy,tx,ty);X.stroke();X.strokeStyle='#ff6fa8';X.lineWidth=w;X.stroke();X.strokeStyle='rgba(255,255,255,.35)';X.lineWidth=w*.3;X.stroke();
- X.fillStyle='#ff6fa8';X.beginPath();X.arc(tx,ty,w*.95+2,0,6.283);X.fill();X.strokeStyle='#b8336a';X.lineWidth=2;X.stroke();
- if(tg.cell){const v=V.get(tg.cell.id);if(v){if(tg.phase==='back'){v.x=tx;v.y=ty-radius(tg.cell)*.4}drawCritter(tg.cell,v.x,v.y,radius(tg.cell),v)}}}
+/* ---- Kelly the giraffe: body + stretchy segmented neck + head ---- */
+function kGeo(){const h=GE.kH*1.0,y=GE.kY,K=G.kelly,hb=h*.56,bw=hb*232/200,hh=h*.52,hw=hh*.93;
+ const nt=y-hb*.9;const restHB=nt+hh*.2;return{h,y,hb,bw,hh,hw,nt,restHB,restMY:restHB-hh*.26,nw:bw*.36}}
+function mouthY(){return kGeo().restMY}
+function headPose(K,stretch){if(K.stun>0||K.emo==='ouch')return 'gh_ouch';const tg=G.tg;
+ if(tg&&(tg.phase==='out'||tg.phase==='tug'))return 'gh_chomp';if(tg&&tg.phase==='back')return tg.res==='ok'?'gh_full':'gh_smile';
+ if(G.hold)return 'gh_full';if(K.mouth>.5)return 'gh_chomp';if(K.emo==='worried')return 'gh_ouch';return 'gh_smile'}
+function drawNeck(x0,y0,x1,y1,nw,strain){const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy);if(len<2)return;const a=Math.atan2(dy,dx);
+ X.save();X.translate(x0,y0);X.rotate(a);const wob=strain?Math.sin(RT*55)*2.2:0;
+ // tube
+ X.lineJoin='round';X.fillStyle='#f6c42f';X.strokeStyle='#4a2a0e';X.lineWidth=3;
+ X.beginPath();X.moveTo(0,-nw/2);X.quadraticCurveTo(len*.5,-nw/2*.86+wob,len,-nw/2*.92);X.lineTo(len,nw/2*.92);X.quadraticCurveTo(len*.5,nw/2*.86-wob,0,nw/2);X.closePath();X.fill();X.stroke();
+ X.save();X.clip();
+ // shading + segments + patches
+ const sh=X.createLinearGradient(0,-nw/2,0,nw/2);sh.addColorStop(0,'rgba(255,240,170,.45)');sh.addColorStop(.5,'rgba(255,255,255,0)');sh.addColorStop(1,'rgba(150,80,10,.28)');X.fillStyle=sh;X.fillRect(0,-nw,len,nw*2);
+ const seg=nw*.72;let k=0;for(let s=seg*.6;s<len-seg*.2;s+=seg,k++){X.strokeStyle='rgba(120,60,10,.22)';X.lineWidth=1.5;X.beginPath();X.moveTo(s,-nw/2);X.quadraticCurveTo(s+3,0,s,nw/2);X.stroke();
+  X.fillStyle='#c8761f';const off=(k%2?.2:-.2)*nw;X.beginPath();X.ellipse(s+seg*.45,off,nw*.2,nw*.15,k*.7,0,6.283);X.fill();
+  X.fillStyle='rgba(200,118,31,.85)';X.beginPath();X.ellipse(s+seg*.05,-off*1.4,nw*.1,nw*.08,0,0,6.283);X.fill()}
+ X.restore();
+ // little mane along the back of the neck
+ X.strokeStyle='#8a4a14';X.lineWidth=Math.max(2,nw*.12);X.lineCap='round';X.setLineDash([nw*.18,nw*.14]);X.beginPath();X.moveTo(nw*.2,-nw/2-1);X.quadraticCurveTo(len*.5,-nw/2*.86+wob-1,len-nw*.2,-nw/2*.92-1);X.stroke();X.setLineDash([]);
+ X.restore()}
+function drawDrips(x,y,R,t,seed,alpha){X.save();X.globalAlpha*=alpha;
+ // slimy film on the critter
+ X.fillStyle='rgba(175,230,255,.30)';X.beginPath();X.ellipse(x,y+R*.15,R*.95,R*.8,0,0,6.283);X.fill();
+ X.fillStyle='rgba(255,255,255,.75)';X.beginPath();X.ellipse(x-R*.38,y-R*.32,R*.22,R*.1,-.6,0,6.283);X.fill();X.beginPath();X.ellipse(x+R*.3,y+R*.1,R*.08,R*.05,-.6,0,6.283);X.fill();
+ for(let i=0;i<4;i++){const ox=(i-1.5)*R*.42+Math.sin(seed+i*2)*R*.08,ph=(t*1.1+i*.31+seed)%1.3;const grow=Math.min(1,ph*2.4),str=grow*R*(.55+.35*((i+Math.floor(seed))%2)),fall=ph>.6?(ph-.6)*R*4:0;
+  const bx=x+ox,by=y+R*.62,dr=Math.max(4,R*.19)*(.6+.4*grow);const tipY=by+(fall?str*.35:str);
+  X.strokeStyle='rgba(40,110,170,.75)';X.lineWidth=Math.max(3,R*.12);X.lineCap='round';X.beginPath();X.moveTo(bx,by-2);X.quadraticCurveTo(bx+Math.sin(RT*6+i)*2,(by+tipY)/2,bx,tipY);X.stroke();
+  X.strokeStyle='rgba(185,235,255,.95)';X.lineWidth=Math.max(1.8,R*.08);X.stroke();
+  const dy=by+str+fall;X.fillStyle='rgba(180,232,255,.95)';X.beginPath();X.moveTo(bx,dy-dr*1.7);X.quadraticCurveTo(bx+dr*1.1,dy-dr*.1,bx,dy+dr);X.quadraticCurveTo(bx-dr*1.1,dy-dr*.1,bx,dy-dr*1.7);X.fill();
+  X.strokeStyle='rgba(40,110,170,.9)';X.lineWidth=1.5;X.stroke();X.fillStyle='#fff';X.beginPath();X.arc(bx-dr*.32,dy-dr*.15,dr*.28,0,6.283);X.fill()}
+ X.restore()}
+function drawKelly(){const K=G.kelly,g=kGeo(),x0=K.x,y=g.y,hop=Math.sin(K.hop*Math.PI)*g.h*.1,sq=K.squash,breathe=Math.sin(RT*3)*.02;let x=x0;
+ X.save();X.fillStyle='rgba(0,0,0,.28)';X.beginPath();X.ellipse(x,y-2,g.h*.34,g.h*.07,0,0,6.283);X.fill();X.restore();
+ if(K.stun>0)x+=Math.sin(RT*50)*3;
+ const tg=G.tg;let hx=x,mY=g.restMY-hop,strain=false,ext=0;
+ if(tg){const tx=colX(tg.col),T=tg.ty+(tg.res==='ok'?radius(tg.cell)*.8:GE.rowH*.3);hx=lerp(x,tx,tg.len);mY=lerp(g.restMY-hop,T,tg.len);
+  if(tg.phase==='tug'){strain=true;const w=Math.sin(tg.t*34);mY+=Math.abs(w)*g.hh*.22;hx+=Math.sin(tg.t*21)*2.5}}
+ else{let fy=null;for(const f of G.flights){if(!f.fromK)continue;const v=V.get(f.cell.id);if(v){fy=v.y+radius(f.cell)*.35;hx=v.x}}
+  if(fy!=null)mY=Math.min(g.restMY-hop,fy);
+  else if(K.neckBack>0){const p=1-K.neckBack;const e=1-Math.pow(1-p,3);const over=Math.sin(p*Math.PI)*g.hh*.08*(1-p);mY=lerp(Math.min(g.restMY,K.neckFromY+g.hh*.1),g.restMY-hop,e)+over;hx=lerp(K.neckFromX,x,e)}}
+ ext=g.restMY-hop-mY;
+ const stretching=ext>g.hh*.15;const pose=K.emo==='cheer'||K.emo==='happy'?'kelly_cheer':K.emo==='worried'&&!G.hold?'kelly_worry':null;
+ const sx=1+sq*.1+breathe,sy=1-sq*.08-breathe;
+ if(pose&&!stretching&&!tg&&!G.hold&&!(K.stun>0)){drawArt(pose,x,y-hop,g.h*1.08,{sx,sy,ay:.97});return null}
+ // body
+ drawArt('g_body',x,y-hop,g.hb,{sx,sy,ay:.97});
+ const hb=mY+g.hh*.26;// head bottom
+ const neckBase=g.nt-hop+g.hb*.04;
+ drawNeck(x,neckBase,hx,hb-g.hh*.12,g.nw*(stretching?1:1.05),strain);
+ if(strain){X.strokeStyle='rgba(255,255,255,.8)';X.lineWidth=2;for(let i=0;i<3;i++){const a=-.5+i*.5+Math.sin(RT*30)*.1;X.beginPath();X.moveTo(hx+Math.cos(a-1.57)*g.hw*.6,hb-g.hh*.9+Math.sin(a-1.57)*g.hh*.3);X.lineTo(hx+Math.cos(a-1.57)*g.hw*.8,hb-g.hh*.9+Math.sin(a-1.57)*g.hh*.45);X.stroke()}}
+ const tilt=strain?Math.sin(tg.t*34)*.12:(hx-x)/(g.h*3);
+ drawArt(headPose(K,stretching),hx,hb,g.hh,{ay:.97,rot:tilt,sx:1+sq*.06,sy:1-sq*.05});
+ if(K.stun>0){for(let i=0;i<3;i++){const a=RT*6+i*2.1;X.fillStyle='#ffe14d';starPath(hx+Math.cos(a)*g.hw*.5,hb-g.hh*1.02+Math.sin(a)*5,6,2.5,5);X.fill()}}
+ return {hx,mY,hb,g,strain}}
+function drawTongue(KD){const tg=G.tg;if(!tg||!tg.cell)return;const v=V.get(tg.cell.id);if(!v)return;const R=radius(tg.cell);
+ if(tg.phase==='tug'){const w=Math.abs(Math.sin(tg.t*34));const cx=colX(tg.col);const topY=GE.top-16;const py=tg.ty+w*GE.rowH*.35;
+  X.strokeStyle='#2f7d33';X.lineWidth=2.6;X.beginPath();X.moveTo(cx,Math.max(topY,tg.ty-GE.rowH*.6));X.lineTo(cx+Math.sin(RT*40)*1.5,py);X.stroke();
+  drawCritter(tg.cell,cx,py,R,{sx:1-w*.18,sy:1+w*.35,ph:v.ph||0,open:0,shiver:1})}
+ else if(tg.phase==='back'){const g=kGeo();const r=R*lerp(Math.min(.62,g.hh*.32/R),1,tg.len);v.x=KD?KD.hx:colX(tg.col);v.y=(KD?KD.mY:g.restMY)-r*.35;drawCritter(tg.cell,v.x,v.y,r,v)}
+ else drawCritter(tg.cell,v.x,v.y,R,v)}
 function drawBoss(){const B=G.boss,bb=GE.bossBox;if(!B||!bb)return;const d=B.dead;if(d>2.2)return;
  const bob=Math.sin(RT*2)*bb.h*.03,lunge=Math.sin((B.lunge||0)*Math.PI)*bb.h*.12;const warn=B.warn&&B.hp>0?(1.4-Math.max(0,B.atkT))/1.4:0;
  X.save();if(warn>0)X.translate(Math.sin(RT*60)*2*warn,0);
@@ -525,10 +605,16 @@ function drawWorld(){const sh=G.shake>.3?G.shake:0;X.save();X.translate(rand(-1,
  for(const v of V.values())if(v.eaten!=null&&v.cell)drawCritter(v.cell,v.x,v.y,radius(v.cell),v);
  if(G.hold&&!G.over){const col=G.B[kc],b=col[col.length-1];const ok=KC.compat(b,G.hold);const gy=rowY(col.length);if(!ok&&col.length<=G.MAXR+1){drawCritter(G.hold,bx,gy,radius(G.hold),{sx:1,sy:1,open:0,ph:0},.3)}
   if(ok&&b){const v=V.get(b.id);if(v){X.strokeStyle='rgba(140,255,150,.9)';X.lineWidth=3;X.beginPath();X.arc(v.x,v.y,radius(b)+7+Math.sin(RT*10)*2,0,6.283);X.stroke()}}}
- for(const f of G.flights){const p=clamp(f.t/(f.dur||.1),0,1),e=ease.out(p);const v=V.get(f.cell.id);if(!v)continue;v.x=lerp(f.x0,colX(f.col),e);v.y=lerp(f.y0,f.ty||f.y0,e);const R=radius(f.cell);for(let i=1;i<4;i++)drawCritter(f.cell,v.x,v.y+i*R*.5,R*(1-i*.15),{sx:.8,sy:1.2,ph:0},.22);drawCritter(f.cell,v.x,v.y,R,{sx:.85,sy:1.25,ph:v.ph})}
+ for(const f of G.flights){const p=clamp(f.t/(f.dur||.1),0,1),e=ease.out(p);const v=V.get(f.cell.id);if(!v)continue;v.x=lerp(f.x0,colX(f.col),e);v.y=lerp(f.y0,f.ty||f.y0,e);if(f.fromK)continue;const R=radius(f.cell);for(let i=1;i<4;i++)drawCritter(f.cell,v.x,v.y+i*R*.5,R*(1-i*.15),{sx:.8,sy:1.2,ph:0},.22);drawCritter(f.cell,v.x,v.y,R,{sx:.85,sy:1.25,ph:v.ph})}
  drawBoss();
- drawTongue();drawKelly(G.kelly.x,GE.kY,GE.kH*.92);
- if(G.hold){const v=V.get(G.hold.id)||newVis(G.hold,G.kelly.x,GE.kY);const R=radius(G.hold)*.72;v.x=G.kelly.x;v.y=GE.kY-GE.kH*1.0-R*.6+Math.sin(RT*5)*1.5;drawCritter(G.hold,v.x,v.y,R,v)}
+ const KD=drawKelly();drawTongue(KD);
+ for(const f of G.flights){if(!f.fromK)continue;const v=V.get(f.cell.id);if(!v)continue;const R=radius(f.cell);drawCritter(f.cell,v.x,v.y,R,{sx:.85,sy:1.25,ph:v.ph,open:0})}
+ if(G.hold){const v=V.get(G.hold.id)||newVis(G.hold,G.kelly.x,GE.kY);const g=kGeo();const R=Math.min(radius(G.hold)*.62,g.hh*.32);const hx=KD?KD.hx:G.kelly.x,my=KD?KD.mY:g.restMY;v.x=hx;v.y=my-R*.35+Math.sin(RT*5)*1;
+  if(G.kelly.muffT>0){v.shiver=1}drawCritter(G.hold,v.x,v.y,R,v);
+  if(G.kelly.muffT>0){X.font=FONT(13,800);X.textAlign='center';X.fillStyle='rgba(255,255,255,'+Math.min(1,G.kelly.muffT*2)+')';X.fillText('mmff!',hx+g.hw*.6,my-g.hh*.55-(.7-G.kelly.muffT)*20)}}
+ if(G.drools)for(const d of G.drools){let x=d.x,y=d.y,R=GE.base*.4;const v=V.get(d.id);if(v&&v.eaten==null){x=v.x;y=v.y;}const c=G.B.flat().find(q=>q&&q.id===d.id);if(c)R=radius(c);drawDrips(x,y,R,d.t,d.seed,Math.min(1,(1.8-d.t)*1.4))}
+ for(const f of G.flights){if(!f.drool)continue;const v=V.get(f.cell.id);if(!v)continue;const R=radius(f.cell);const g=kGeo();
+  X.strokeStyle='rgba(200,240,255,.8)';X.lineWidth=2;X.beginPath();X.moveTo(v.x-R*.2,v.y+R*.5);X.quadraticCurveTo(v.x+Math.sin(RT*20)*6,v.y+R*1.4,v.x+R*.15,v.y+R*.45+g.hh*.3);X.stroke();drawDrips(v.x,v.y,R,f.t*2,1,1)}
  if(G.burpFx){X.globalAlpha=G.burpFx*.7;for(let i=0;i<7;i++){X.fillStyle=`hsl(${i*50+RT*200},90%,60%)`;X.beginPath();X.arc(G.kelly.x+Math.sin(i)*40,GE.kY-60-(1-G.burpFx)*400-i*24,22-i*2,0,6.283);X.fill()}X.globalAlpha=1}
  drawFx();X.restore()}
 /* ---- canvas HUD pills ---- */
@@ -590,7 +676,7 @@ function showMap(focus){G=null;setState('map');MUS.play('map');let h='<div class
  h+='</div>';showUI(h,'map');const t=focus!=null?focus:Math.min(save.unlocked-1,STAGES.length-1);const el=UI.querySelector('[data-a="stage:'+t+'"]');if(el){const bs=[...UI.querySelectorAll('[data-a]')];gpIdx=bs.indexOf(el);setTimeout(()=>{el.scrollIntoView({block:'center'});gpFocus(gpIdx)},30)}}
 /* ---- stage card ---- */
 function showCard(si){cardStage=si;const s=STAGES[si],w=WORLDS[s.w];setState('card');let goal='',art='';
- if(s.type==='feast'){goal='Pop <b>'+s.goal+'</b> critters before they cross the line!';art='<img src="art/kelly_open.webp?v='+VERSION+'" alt="">'}
+ if(s.type==='feast'){goal='Pop <b>'+s.goal+'</b> critters before they cross the line!';art='<img src="art/kelly_stretch.webp?v='+VERSION+'" alt="">'}
  else if(s.type==='puzzle'){const P=PUZZLES[s.pi];goal='Clear <b>every</b> critter in <b>'+P.limit+'</b> moves. Par is '+P.par+'.';art='<img src="art/c1_'+(s.w%5)+'.webp?v='+VERSION+'" alt=""><img src="art/c2_'+((s.w+2)%5)+'.webp?v='+VERSION+'" alt="">'}
  else{goal='<b>BOSS!</b> Every pop blasts '+w.boss.n+'. Watch out for '+{thorns:'Thorn Toss',slime:'Bog Burps',rumble:'RUMBLES',freeze:'Crystal Freeze',royal:'ALL the royal attacks'}[w.boss.atk]+'!';art='<img class="bossimg" src="art/'+w.boss.art+'.webp?v='+VERSION+'" alt="">'}
  showUI('<p class="wname">World '+(s.w+1)+' · '+w.n+'</p><h2>'+(s.type==='boss'?w.boss.n:'Stage '+s.label)+'</h2><div class="cardart">'+art+'</div><p class="goal">'+goal+'</p>'+(save.stars[si]?'<p class="best">Best: '+starsStr(save.stars[si])+'</p>':'')+
@@ -611,7 +697,7 @@ function showTower(){G=null;setState('tower');MUS.play('map');const un=towerUnlo
  h+='</div>';showUI(h,'tower');const el=UI.querySelector('[data-a="tp:'+(un-1)+'"]');if(el){const bs=[...UI.querySelectorAll('[data-a]')];gpIdx=bs.indexOf(el);setTimeout(()=>{el.scrollIntoView({block:'center'});gpFocus(gpIdx)},30)}}
 function towerStage(pi){return{type:'puzzle',w:Math.floor(pi/46)%5,pi,i:'p'+pi,label:'P'+(pi+1)}}
 /* ---- how to ---- */
-function howArt(k){const im=n=>'<img src="art/'+n+'.webp?v='+VERSION+'" alt="">';return {kelly:im('kelly_idle')+im('kelly_open'),sizes:im('c0_1')+'<b>➜</b>'+im('c1_1')+'<b>➜</b>'+im('c2_1'),full:im('c1_3')+'<b>+</b>'+im('c0_3')+'<b>=</b><span class="fullc">'+im('c1_3')+'<i>FULL</i></span>',special:im('bomb')+im('spiky')+im('gem'),boss:im('boss1')+im('kelly_cheer'),pad:'<span class="padico">🎮⌨️👆</span>'}[k]||''}
+function howArt(k){const im=n=>'<img src="art/'+n+'.webp?v='+VERSION+'" alt="">';return {kelly:im('kelly_idle')+im('kelly_stretch'),sizes:im('c0_1')+'<b>➜</b>'+im('c1_1')+'<b>➜</b>'+im('c2_1'),full:im('c1_3')+'<b>+</b>'+im('c0_3')+'<b>=</b><span class="fullc">'+im('c1_3')+'<i>FULL</i></span>',special:im('bomb')+im('spiky')+im('gem'),boss:im('boss1')+im('kelly_cheer'),pad:'<span class="padico">🎮⌨️👆</span>'}[k]||''}
 function showHow(from){howFrom=from||'title';howPage=0;if(state==='play'||state==='pause'){setState('pause')}else setState('howto');howDraw()}
 function howDraw(){const P=HOW[howPage];showUI('<div class="top">'+btn('howx','✕ Close','sm')+'<b>How to Play</b><span class="tot">'+(howPage+1)+' / '+HOW.length+'</span></div><div class="howart">'+howArt(P.art)+'</div><h2>'+P.t+'</h2><p class="howd">'+P.d+'</p><div class="row">'+(howPage?btn('howp','◀ Back','mid'):'')+btn('hown',howPage<HOW.length-1?'Next ▶':'Got it!','mid go')+'</div>','how')}
 /* ---- pause ---- */
@@ -629,7 +715,7 @@ function onAct(a,el){const [k,v]=a.split(':');
  else if(k==='tp')startGame('puzzle',towerStage(+v));
  else if(k==='tnext')startGame('puzzle',towerStage(G.S.pi+1));
  else if(k==='how')showHow(state==='pause'?'pause':state);
- else if(k==='howx'){if(howFrom==='pause'&&G){pauseGame0()}else showTitle()}
+ else if(k==='howx'){if(howFrom==='pause'&&G){pauseGame0()}else if(howFrom==='card')showCard(cardStage);else showTitle()}
  else if(k==='hown'){if(howPage<HOW.length-1){howPage++;howDraw()}else{save.seenHow=true;persist();if(howFrom==='pause'&&G)pauseGame0();else if(howFrom==='card')showCard(cardStage);else showTitle()}}
  else if(k==='howp'){howPage=Math.max(0,howPage-1);howDraw()}
  else if(k==='sound'){save.muted=!save.muted;persist();AU.apply();el.innerHTML=save.muted?'🔇 Sound: Off':'🔊 Sound: On';syncMute()}
