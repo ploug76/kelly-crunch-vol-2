@@ -93,6 +93,7 @@ h2.lose{color:#ff8a9a}
 body.land .scr.title{display:grid;grid-template-columns:46% 50%;grid-template-areas:'logo menu' 'hero menu' 'foot foot';column-gap:4%;max-width:900px;align-content:center;justify-content:center}
 body.land .scr.title .logo{grid-area:logo;width:100%}body.land .scr.title .hero{grid-area:hero;height:min(30vh,150px)}body.land .scr.title .menu{grid-area:menu;width:100%;align-self:center}body.land .scr.title .foot{grid-area:foot}
 body.land .logo .l2{font-size:60px}
+.logo .l1.sm{font-size:min(38px,9vw)}.logo .l2.long{font-size:min(60px,13vw)}body.land .logo .l2.long{font-size:48px}body.land .logo .l1.sm{font-size:30px}
 body.land .scr.story{flex-direction:row;flex-wrap:wrap;max-width:900px;align-content:center}
 body.land .scr.story .panel{width:42%}body.land .scr.story .stxt{width:52%;margin:0 0 0 2%}body.land .scr.story .row{width:100%;max-width:520px}
 body.land .scr.card .cardart{height:28vh}

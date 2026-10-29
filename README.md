@@ -1,10 +1,10 @@
-# Kelly Crunch Vol. 2: The Great Feast Quest
+# Doctor Kelly's Lizard Munch: The Great Feast Quest
 
 Kelly the chameleon is back. The Gobble King crashed the Rainbow Feast and carried off every pie, so Kelly sets out across five painted worlds to win it back, one critter chain at a time.
 
 Play: https://ploug76.github.io/kelly-crunch-vol-2/
 
-The first game is still here, unchanged: https://ploug76.github.io/kelly-crunch/
+The first Kelly Crunch is still here, unchanged: https://ploug76.github.io/kelly-crunch/
 
 - 5 worlds (Sunny Garden, Misty Swamp, Sunset Canyon, Crystal Caverns and Starry Sky Castle), 30 stages: feasts, puzzles and a boss at the end of each world
 - 5 bosses: Bramblejaw, Queen Bogsnap, Rockjaw, Glimmergulp and the Gobble King. Every critter you pop blasts the boss, and each boss fights back with thorns, slime, rumbles, freezes or all four
